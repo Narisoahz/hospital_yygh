@@ -5,4 +5,5 @@ import com.zsr.yygh.model.cmn.Dict;
 
 
 public interface DictMapper extends BaseMapper<Dict> {
+
 }
