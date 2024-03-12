@@ -1,6 +1,7 @@
 package com.zsr.yygh.cmn.service.impl;
 
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zsr.yygh.cmn.listener.DictListener;
@@ -9,6 +10,7 @@ import com.zsr.yygh.cmn.service.DictService;
 import com.zsr.yygh.model.cmn.Dict;
 import com.zsr.yygh.model.hosp.HospitalSet;
 import com.zsr.yygh.vo.cmn.DictEeVo;
+import org.apache.poi.util.StringUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -71,6 +73,43 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public String getNameByParentDictCodeAndValue(String parentDictCode, String value) {
+        //如果dictcode为空
+        if(StringUtils.isEmpty(parentDictCode)){
+            QueryWrapper<Dict> wrapper = new QueryWrapper<>();
+            wrapper.eq("value",value);
+            Dict dict = baseMapper.selectOne(wrapper);
+            return dict.getName();
+        }else{
+            Dict codeDict = this.getDictByDictCode(parentDictCode);
+
+            Long parentId = codeDict.getId();
+            //根据parentid和value查询
+            Dict dict = baseMapper.selectOne(new QueryWrapper<Dict>().eq("parent_id", parentId).eq("value", value));
+            return dict.getName();
+        }
+
+    }
+
+    @Override
+    public List<Dict> findByDictCode(String dictCode) {
+        //根据dictCode获取对应id
+        Dict dict = this.getDictByDictCode(dictCode);
+        //根据id获取子节点
+        List<Dict> chlidData = this.findChlidData(dict.getId());
+
+        return chlidData;
+    }
+
+    private Dict getDictByDictCode(String dictCode){
+        QueryWrapper<Dict> wrapper = new QueryWrapper<>();
+        wrapper.eq("dict_code",dictCode);
+        Dict dict = baseMapper.selectOne(wrapper);
+        return dict;
+    }
+
     //判断id下面是否有子节点
     private boolean hasChildren(Long id) {
         QueryWrapper<Dict> wrapper = new QueryWrapper<>();
